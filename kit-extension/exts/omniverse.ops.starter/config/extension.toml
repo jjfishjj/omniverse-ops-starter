@@ -1,0 +1,15 @@
+[package]
+version = "0.1.0"
+title = "Omniverse Ops Starter"
+description = "A beginner-friendly Omniverse Kit extension for creating a small OpenUSD operations scene."
+category = "Examples"
+authors = ["Junbin Kuo"]
+keywords = ["omniverse", "openusd", "digital twin", "starter"]
+
+[dependencies]
+"omni.ui" = {}
+"omni.usd" = {}
+"omni.kit.viewport.utility" = {}
+
+[[python.module]]
+name = "omniverse.ops.starter"

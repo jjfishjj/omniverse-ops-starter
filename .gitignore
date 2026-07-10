@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+output/*.usd
+output/*.usdc
+output/*.usda
+!output/.gitkeep
