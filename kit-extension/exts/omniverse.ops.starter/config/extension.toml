@@ -1,7 +1,7 @@
 [package]
-version = "0.1.0"
+version = "0.2.0"
 title = "Omniverse Ops Starter"
-description = "A beginner-friendly Omniverse Kit extension for creating a small OpenUSD operations scene."
+description = "A data-driven Omniverse Kit extension for creating a compact factory digital twin scene."
 category = "Examples"
 authors = ["Junbin Kuo"]
 keywords = ["omniverse", "openusd", "digital twin", "starter"]

@@ -1,18 +1,21 @@
 # Omniverse Ops Starter
 
-一個用來練習 NVIDIA Omniverse / OpenUSD 基本操作的入門專案。它示範如何用 Python 建立 USD 場景、驗證場景內容，並提供一個 Omniverse Kit extension 骨架，方便之後擴充成 UI 工具。
+一個 NVIDIA Omniverse / OpenUSD 工廠數位孿生 starter project。專案用 Python 從 JSON layout 產生 `.usda` 場景，並附上一個 Omniverse Kit extension 範例，方便之後擴充成工廠監控、設備配置、物流動線或機器人模擬工具。
 
-## 專案目標
+## 專案亮點
 
-- 建立一個可放上 GitHub 的 Omniverse 操作作品集專案
-- 用 OpenUSD 概念建立簡單的數位孿生場景
-- 提供清楚的中文操作文件
-- 保留 Omniverse Kit SDK extension 的擴充入口
+- 資料驅動場景：`data/factory_layout.json` 管理設備、感測器、安全區與物流流程節點
+- OpenUSD 優先：有 `pxr` / `usd-core` 時使用正式 OpenUSD Python API
+- 可離線展示：沒有 OpenUSD runtime 時會輸出 readable USDA fallback
+- Kit extension：可在 Omniverse Kit-based app 中一鍵建立 / 更新場景
+- 驗證工具：依 layout contract 檢查必要 prim 與 metadata
 
 ## 專案結構
 
 ```text
 .
+├── data/
+│   └── factory_layout.json
 ├── docs/
 │   ├── setup.md
 │   └── workflow.md
@@ -23,21 +26,19 @@
 ├── scripts/
 │   ├── create_demo_stage.py
 │   └── validate_stage.py
-├── .gitignore
-├── LICENSE
+├── tests/
+│   └── test_scene_contract.py
 ├── pyproject.toml
 └── README.md
 ```
 
 ## 快速開始
 
-建立虛擬環境：
-
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
-python -m pip install -e .
+python -m pip install -e ".[usd]"
 ```
 
 產生範例 USD 場景：
@@ -52,28 +53,36 @@ python scripts/create_demo_stage.py --output output/demo_factory.usda
 python scripts/validate_stage.py output/demo_factory.usda
 ```
 
-## 產出的場景
+跑測試：
 
-`create_demo_stage.py` 會建立一個簡化的工廠數位孿生場景，包含：
+```bash
+python -m unittest discover -s tests
+```
 
-- 地板
-- 兩台設備
-- 三個感測器節點
-- 燈光
-- 基本 metadata
+## 場景內容
 
-如果環境有安裝 `pxr` / `usd-core`，腳本會使用 OpenUSD Python API 產生檔案；如果沒有，會用安全的 USDA 文字輸出作為 fallback，方便先學習與展示。
+目前的 factory twin 包含：
+
+- `/World/Equipment`：輸送帶、機械手臂工作站、AOI 檢測站
+- `/World/Sensors`：溫度、壓力、震動感測器與 threshold metadata
+- `/World/SafetyZones`：機械手臂安全區、forklift lane
+- `/World/FlowMarkers`：inbound、handoff、inspection、outbound 流程節點
+- `/World/Lighting` 與 `/World/Cameras`：基本展示用燈光與 overview camera
 
 ## Omniverse Kit Extension
 
-`kit-extension/exts/omniverse.ops.starter` 是一個簡化的 Kit extension 範例，展示如何在 Omniverse Kit 裡建立一個工具視窗，並呼叫 USD stage 操作。
+Extension 位於：
 
-實際載入方式請依照 NVIDIA Kit App Template 或你自己的 Kit 應用設定 extension search path。
+```text
+kit-extension/exts/omniverse.ops.starter
+```
 
-## 參考文件
+在 Kit-based app 中把 `kit-extension/exts` 加入 extension search path，啟用 `omniverse.ops.starter` 後，會看到 `Omniverse Ops Starter` 視窗，可按 `Create / Update Scene` 建立場景。
 
-- [NVIDIA Omniverse Docs](https://docs.nvidia.com/omniverse/index.html)
-- [Omniverse Kit App Template](https://github.com/NVIDIA-Omniverse/kit-app-template)
+## 參考
+
+- [NVIDIA Omniverse Documentation](https://docs.nvidia.com/omniverse/index.html)
+- [NVIDIA Omniverse Kit App Template](https://github.com/NVIDIA-Omniverse/kit-app-template)
 - [OpenUSD Documentation](https://openusd.org/release/index.html)
 
 ## 授權

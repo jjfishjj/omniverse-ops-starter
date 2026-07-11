@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omniverse-ops-starter"
-version = "0.1.0"
-description = "A beginner-friendly NVIDIA Omniverse and OpenUSD operations starter project."
+version = "0.2.0"
+description = "A data-driven NVIDIA Omniverse and OpenUSD factory digital twin starter project."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Junbin Kuo" }]
 dependencies = []
 
@@ -19,3 +19,6 @@ dev = ["ruff>=0.6"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.setuptools]
+py-modules = []

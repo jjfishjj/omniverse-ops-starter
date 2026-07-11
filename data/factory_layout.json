@@ -1,0 +1,127 @@
+{
+  "project": "omniverse-ops-starter",
+  "title": "Omniverse Ops Starter Factory Twin",
+  "description": "A compact factory digital twin scene for NVIDIA Omniverse and OpenUSD workflows.",
+  "units": {
+    "meters_per_unit": 1,
+    "up_axis": "Z"
+  },
+  "equipment": [
+    {
+      "id": "Conveyor_A",
+      "kind": "cube",
+      "role": "inbound conveyor",
+      "status": "running",
+      "translation": [-2.7, 0.0, 0.38],
+      "scale": [1.9, 0.32, 0.28],
+      "color": [0.1, 0.35, 0.85],
+      "metrics": {
+        "throughput_per_hour": 920,
+        "oee": 0.87
+      }
+    },
+    {
+      "id": "Robot_Cell_B",
+      "kind": "cube",
+      "role": "pick and place cell",
+      "status": "ready",
+      "translation": [1.35, 0.55, 0.72],
+      "scale": [0.72, 0.72, 0.72],
+      "color": [0.85, 0.35, 0.1],
+      "metrics": {
+        "cycle_time_seconds": 8.4,
+        "oee": 0.91
+      }
+    },
+    {
+      "id": "Inspection_C",
+      "kind": "cube",
+      "role": "vision quality gate",
+      "status": "watch",
+      "translation": [3.2, -0.1, 0.52],
+      "scale": [0.62, 0.48, 0.52],
+      "color": [0.22, 0.62, 0.44],
+      "metrics": {
+        "pass_rate": 0.982,
+        "alerts": 1
+      }
+    }
+  ],
+  "sensors": [
+    {
+      "id": "Temperature_01",
+      "kind": "sphere",
+      "role": "temperature",
+      "unit": "C",
+      "value": 37.4,
+      "threshold": 45,
+      "translation": [-3.15, -0.78, 1.16],
+      "scale": [0.15, 0.15, 0.15],
+      "color": [0.95, 0.15, 0.2]
+    },
+    {
+      "id": "Pressure_01",
+      "kind": "sphere",
+      "role": "air pressure",
+      "unit": "bar",
+      "value": 5.8,
+      "threshold": 6.2,
+      "translation": [0.0, 1.05, 1.08],
+      "scale": [0.15, 0.15, 0.15],
+      "color": [0.15, 0.8, 0.35]
+    },
+    {
+      "id": "Vibration_01",
+      "kind": "sphere",
+      "role": "vibration",
+      "unit": "mm/s",
+      "value": 2.1,
+      "threshold": 4.5,
+      "translation": [2.45, -0.78, 1.25],
+      "scale": [0.15, 0.15, 0.15],
+      "color": [0.95, 0.78, 0.12]
+    }
+  ],
+  "safety_zones": [
+    {
+      "id": "Robot_Cell_Safety",
+      "translation": [1.35, 0.55, 0.04],
+      "scale": [1.25, 1.05, 0.035],
+      "color": [0.95, 0.78, 0.12],
+      "opacity": 0.32
+    },
+    {
+      "id": "Forklift_Lane",
+      "translation": [0.0, -1.55, 0.035],
+      "scale": [4.6, 0.22, 0.025],
+      "color": [0.15, 0.62, 0.95],
+      "opacity": 0.28
+    }
+  ],
+  "flow_markers": [
+    {
+      "id": "Inbound",
+      "translation": [-3.9, 0.0, 0.18],
+      "scale": [0.16, 0.16, 0.16],
+      "color": [0.1, 0.35, 0.85]
+    },
+    {
+      "id": "Robot_Handoff",
+      "translation": [-0.55, 0.0, 0.18],
+      "scale": [0.16, 0.16, 0.16],
+      "color": [0.85, 0.35, 0.1]
+    },
+    {
+      "id": "Inspection",
+      "translation": [2.4, -0.08, 0.18],
+      "scale": [0.16, 0.16, 0.16],
+      "color": [0.22, 0.62, 0.44]
+    },
+    {
+      "id": "Outbound",
+      "translation": [4.05, -0.08, 0.18],
+      "scale": [0.16, 0.16, 0.16],
+      "color": [0.95, 0.78, 0.12]
+    }
+  ]
+}

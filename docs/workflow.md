@@ -1,37 +1,56 @@
 # 操作流程
 
-## 1. 建立 USD 場景
+## 1. 調整工廠 layout
+
+主要設定檔：
+
+```text
+data/factory_layout.json
+```
+
+你可以在這裡調整：
+
+- `equipment`：設備 ID、角色、狀態、位置、尺寸、營運 metrics
+- `sensors`：感測器數值、單位、threshold、位置
+- `safety_zones`：安全區範圍、透明度、顏色
+- `flow_markers`：物流或製程流程節點
+
+## 2. 產生 USD 場景
 
 ```bash
 python scripts/create_demo_stage.py --output output/demo_factory.usda
 ```
 
-你會得到一個簡化工廠場景：
+有安裝 `usd-core` 時會用 OpenUSD Python API 輸出；沒有安裝時會使用 USDA fallback writer。
 
-- `/World/Ground`
-- `/World/Equipment/Conveyor_A`
-- `/World/Equipment/Robot_Cell_B`
-- `/World/Sensors/Temperature_01`
-- `/World/Sensors/Pressure_01`
-- `/World/Sensors/Vibration_01`
-- `/World/Lighting/KeyLight`
-
-## 2. 驗證 USD 場景
+## 3. 驗證 USD 場景
 
 ```bash
 python scripts/validate_stage.py output/demo_factory.usda
 ```
 
-驗證腳本會檢查必要 prim 是否存在，並回報檔案是否符合專案基本要求。
+驗證腳本會依 `data/factory_layout.json` 推導必要 prim，並檢查 metadata marker。
 
-## 3. 在 Omniverse 中開啟
+## 4. 在 Omniverse 中使用
 
-有 Omniverse Kit-based app 時，可以直接開啟 `output/demo_factory.usda`。建議用新的 Kit SDK workflow 或依照你建立的 Kit app 載入。
+有 Omniverse Kit-based app 時，可以直接開啟：
 
-## 4. 下一步擴充方向
+```text
+output/demo_factory.usda
+```
 
-- 把設備位置改成讀取 CSV 或 JSON
-- 加入工廠設備 metadata
-- 加入材質與燈光 preset
-- 把 validation 做成 CI 檢查
-- 在 Kit extension 中加入按鈕，一鍵產生或更新場景
+也可以載入 extension：
+
+```text
+kit-extension/exts/omniverse.ops.starter
+```
+
+啟用後按 `Create / Update Scene`，即可在目前 stage 生成工廠數位孿生範例。
+
+## 5. 下一步擴充方向
+
+- 改成讀取真實工廠設備 CSV / MES / IoT API
+- 把 sensor value 做成 live update
+- 加入 PhysX rigid body、碰撞與安全邊界測試
+- 串 Isaac Sim 做 AMR 或機械手臂訓練場景
+- 把 validation 加到 GitHub Actions
