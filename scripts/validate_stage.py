@@ -63,15 +63,16 @@ def validate_with_text(stage_path: Path, required_prims: list[str]) -> tuple[boo
     names = set(re.findall(r'def\s+\w+\s+"([^"]+)"', text))
     missing = [path for path in required_prims if path.rsplit("/", 1)[-1] not in names]
 
-    for required_text in [
-        'defaultPrim = "World"',
-        'customLayerData = {',
-        'string project = "omniverse-ops-starter"',
-        "ops:id",
-        "ops:section",
-    ]:
-        if required_text not in text:
-            missing.append(f"text marker: {required_text}")
+    required_markers = [
+        ('defaultPrim = "World"',),
+        ("customLayerData = {",),
+        ('string project = "omniverse-ops-starter"',),
+        ("ops:id", "dictionary ops = {"),
+        ("ops:section", "string section ="),
+    ]
+    for alternatives in required_markers:
+        if not any(required_text in text for required_text in alternatives):
+            missing.append(f"text marker: {' or '.join(alternatives)}")
 
     return not missing, missing
 

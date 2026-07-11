@@ -47,10 +47,19 @@ kit-extension/exts/omniverse.ops.starter
 
 啟用後按 `Create / Update Scene`，即可在目前 stage 生成工廠數位孿生範例。
 
-## 5. 下一步擴充方向
+## 5. 開啟網頁互動展示
+
+```bash
+open web-demo/index.html
+```
+
+Web demo 會用同一份 factory layout 顯示 KPI、感測器狀態、設備詳情、安全區與流程節點。若透過本機檔案直接開啟而無法 fetch JSON，前端會使用內建 fallback layout。
+
+## 6. 下一步擴充方向
 
 - 改成讀取真實工廠設備 CSV / MES / IoT API
 - 把 sensor value 做成 live update
 - 加入 PhysX rigid body、碰撞與安全邊界測試
 - 串 Isaac Sim 做 AMR 或機械手臂訓練場景
 - 把 validation 加到 GitHub Actions
+- 把 `web-demo/` 發佈成 GitHub Pages 或 Sites production demo

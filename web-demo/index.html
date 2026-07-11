@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Omniverse Ops Starter Web Demo</title>
+    <meta
+      name="description"
+      content="Interactive factory digital twin web demo for the Omniverse Ops Starter project."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">OpenUSD Factory Twin</p>
+          <h1>Omniverse Ops Starter</h1>
+        </div>
+        <div class="toolbar" aria-label="Simulation controls">
+          <button class="icon-button" id="toggle-sim" type="button" aria-label="Pause simulation">
+            <span id="toggle-icon">||</span>
+          </button>
+          <button class="icon-button" id="focus-alerts" type="button" aria-label="Focus alerts">
+            <span>!</span>
+          </button>
+          <label class="speed-control" for="speed-range">
+            <span>Sim rate</span>
+            <input id="speed-range" type="range" min="1" max="5" value="2" />
+          </label>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <aside class="left-panel" aria-label="Factory overview">
+          <section class="panel-section">
+            <p class="section-label">Plant Status</p>
+            <div class="kpi-grid" id="kpi-grid"></div>
+          </section>
+          <section class="panel-section">
+            <p class="section-label">Sensor Watch</p>
+            <div class="sensor-list" id="sensor-list"></div>
+          </section>
+          <section class="panel-section">
+            <p class="section-label">USD Contract</p>
+            <div class="contract-list">
+              <div><span>Prims</span><strong id="prim-count">23</strong></div>
+              <div><span>Stage</span><strong>Z up</strong></div>
+              <div><span>Units</span><strong>meters</strong></div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="stage-panel" aria-label="Factory twin map">
+          <div class="stage-header">
+            <div>
+              <p class="section-label">Digital Twin View</p>
+              <h2 id="stage-title">Factory operations map</h2>
+            </div>
+            <div class="view-toggles" aria-label="Layer filters">
+              <button class="toggle active" data-layer="equipment" type="button">Equipment</button>
+              <button class="toggle active" data-layer="sensors" type="button">Sensors</button>
+              <button class="toggle active" data-layer="zones" type="button">Zones</button>
+              <button class="toggle active" data-layer="flow" type="button">Flow</button>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="factory-canvas" width="1120" height="680" aria-label="Factory map"></canvas>
+          </div>
+          <div class="timeline">
+            <div>
+              <span>Throughput</span>
+              <strong id="throughput-value">920/hr</strong>
+            </div>
+            <div class="sparkline" id="sparkline" aria-hidden="true"></div>
+            <div>
+              <span>Alert Load</span>
+              <strong id="alert-load">1</strong>
+            </div>
+          </div>
+        </section>
+
+        <aside class="right-panel" aria-label="Selected asset details">
+          <section class="inspector">
+            <p class="section-label">Inspector</p>
+            <h2 id="asset-name">Conveyor_A</h2>
+            <p id="asset-role">inbound conveyor</p>
+            <div class="status-pill" id="asset-status">running</div>
+            <dl class="asset-metrics" id="asset-metrics"></dl>
+          </section>
+          <section class="panel-section">
+            <p class="section-label">Scenario</p>
+            <div class="scenario-grid">
+              <button class="scenario active" data-scenario="baseline" type="button">
+                <span>Baseline</span>
+                <strong>87%</strong>
+              </button>
+              <button class="scenario" data-scenario="pressure" type="button">
+                <span>Pressure</span>
+                <strong>Warn</strong>
+              </button>
+              <button class="scenario" data-scenario="robot" type="button">
+                <span>Robot Cell</span>
+                <strong>91%</strong>
+              </button>
+            </div>
+          </section>
+          <section class="panel-section">
+            <p class="section-label">Pipeline</p>
+            <div class="pipeline">
+              <span>JSON Layout</span>
+              <span>OpenUSD Stage</span>
+              <span>Kit Extension</span>
+              <span>Web Demo</span>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

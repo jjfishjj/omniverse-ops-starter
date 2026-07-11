@@ -28,6 +28,10 @@
 │   └── validate_stage.py
 ├── tests/
 │   └── test_scene_contract.py
+├── web-demo/
+│   ├── index.html
+│   ├── styles.css
+│   └── app.js
 ├── pyproject.toml
 └── README.md
 ```
@@ -59,6 +63,12 @@ python scripts/validate_stage.py output/demo_factory.usda
 python -m unittest discover -s tests
 ```
 
+開啟網頁互動展示：
+
+```bash
+open web-demo/index.html
+```
+
 ## 場景內容
 
 目前的 factory twin 包含：
@@ -78,6 +88,10 @@ kit-extension/exts/omniverse.ops.starter
 ```
 
 在 Kit-based app 中把 `kit-extension/exts` 加入 extension search path，啟用 `omniverse.ops.starter` 後，會看到 `Omniverse Ops Starter` 視窗，可按 `Create / Update Scene` 建立場景。
+
+## Web Demo
+
+`web-demo/index.html` 是一個純靜態互動展示端，適合放在 GitHub Pages 或直接用瀏覽器開啟。它會優先讀取 `data/factory_layout.json`，並提供內建 fallback，讓 demo 在本機檔案模式也能正常展示。
 
 ## 參考
 
