@@ -1,0 +1,56 @@
+{
+  "default": "baseline",
+  "variants": [
+    {
+      "id": "baseline",
+      "label": "Baseline",
+      "description": "Normal factory operations with balanced sensor readings and one inspection watch item.",
+      "throughput_multiplier": 1.0,
+      "oee_delta": 0.0,
+      "sensor_offsets": {
+        "Temperature_01": 0.0,
+        "Pressure_01": 0.0,
+        "Vibration_01": 0.0
+      },
+      "equipment_status": {
+        "Conveyor_A": "running",
+        "Robot_Cell_B": "ready",
+        "Inspection_C": "watch"
+      }
+    },
+    {
+      "id": "peak_hour",
+      "label": "Peak Hour",
+      "description": "Higher inbound volume pushes conveyor throughput and pressure close to the threshold.",
+      "throughput_multiplier": 1.18,
+      "oee_delta": -0.03,
+      "sensor_offsets": {
+        "Temperature_01": 2.6,
+        "Pressure_01": 0.38,
+        "Vibration_01": 0.24
+      },
+      "equipment_status": {
+        "Conveyor_A": "running",
+        "Robot_Cell_B": "busy",
+        "Inspection_C": "watch"
+      }
+    },
+    {
+      "id": "maintenance",
+      "label": "Maintenance",
+      "description": "Robot cell is isolated while the AMR route switches to a bypass path.",
+      "throughput_multiplier": 0.62,
+      "oee_delta": -0.16,
+      "sensor_offsets": {
+        "Temperature_01": -1.2,
+        "Pressure_01": -0.5,
+        "Vibration_01": 0.12
+      },
+      "equipment_status": {
+        "Conveyor_A": "running",
+        "Robot_Cell_B": "maintenance",
+        "Inspection_C": "ready"
+      }
+    }
+  ]
+}

@@ -24,6 +24,10 @@
           <button class="icon-button" id="focus-alerts" type="button" aria-label="Focus alerts">
             <span>!</span>
           </button>
+          <div class="live-status" id="live-status" aria-live="polite">
+            <span></span>
+            <strong>Local sim</strong>
+          </div>
           <label class="speed-control" for="speed-range">
             <span>Sim rate</span>
             <input id="speed-range" type="range" min="1" max="5" value="2" />
@@ -62,6 +66,7 @@
               <button class="toggle active" data-layer="sensors" type="button">Sensors</button>
               <button class="toggle active" data-layer="zones" type="button">Zones</button>
               <button class="toggle active" data-layer="flow" type="button">Flow</button>
+              <button class="toggle active" data-layer="robots" type="button">AMR</button>
             </div>
           </div>
           <div class="canvas-wrap">
@@ -90,25 +95,37 @@
           </section>
           <section class="panel-section">
             <p class="section-label">Scenario</p>
-            <div class="scenario-grid">
-              <button class="scenario active" data-scenario="baseline" type="button">
+            <div class="scenario-grid" id="scenario-grid">
+              <button class="scenario active" data-scenario="baseline" data-multiplier="1" type="button">
                 <span>Baseline</span>
                 <strong>87%</strong>
               </button>
-              <button class="scenario" data-scenario="pressure" type="button">
-                <span>Pressure</span>
-                <strong>Warn</strong>
+              <button class="scenario" data-scenario="peak_hour" data-multiplier="1.18" type="button">
+                <span>Peak Hour</span>
+                <strong>+18%</strong>
               </button>
-              <button class="scenario" data-scenario="robot" type="button">
-                <span>Robot Cell</span>
-                <strong>91%</strong>
+              <button class="scenario" data-scenario="maintenance" data-multiplier="0.62" type="button">
+                <span>Maintenance</span>
+                <strong>Bypass</strong>
               </button>
+            </div>
+          </section>
+          <section class="panel-section">
+            <p class="section-label">AMR Mission</p>
+            <div class="amr-card">
+              <strong id="amr-name">AMR_01</strong>
+              <span id="amr-task">Awaiting route data</span>
+              <div class="progress-track"><i id="amr-progress"></i></div>
+              <small id="amr-position">x 0.00 / y 0.00</small>
             </div>
           </section>
           <section class="panel-section">
             <p class="section-label">Pipeline</p>
             <div class="pipeline">
               <span>JSON Layout</span>
+              <span>USD Layers + Variants</span>
+              <span>WebSocket Telemetry</span>
+              <span>Isaac AMR Scenario</span>
               <span>OpenUSD Stage</span>
               <span>Kit Extension</span>
               <span>Web Demo</span>

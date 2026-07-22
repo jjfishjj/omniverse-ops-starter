@@ -143,11 +143,26 @@ def _custom_data_block(data: dict[str, Any], indent: str) -> str:
     if not data:
         return ""
     lines = [f"{indent}customData = {{"]
-    for key, value in sorted(data.items()):
-        usd_type = "string" if isinstance(value, str) else "double"
-        lines.append(f"{indent}    {usd_type} {key} = {_format_value(value)}")
+    lines.extend(_custom_data_lines(data, indent + "    "))
     lines.append(f"{indent}}}")
     return "\n".join(lines)
+
+
+def _custom_data_lines(data: dict[str, Any], indent: str) -> list[str]:
+    lines: list[str] = []
+    nested: dict[str, dict[str, Any]] = {}
+    for key, value in sorted(data.items()):
+        if ":" in key:
+            head, tail = key.split(":", 1)
+            nested.setdefault(head, {})[tail] = value
+            continue
+        usd_type = "string" if isinstance(value, str) else "double"
+        lines.append(f"{indent}{usd_type} {key} = {_format_value(value)}")
+    for key, value in sorted(nested.items()):
+        lines.append(f"{indent}dictionary {key} = {{")
+        lines.extend(_custom_data_lines(value, indent + "    "))
+        lines.append(f"{indent}}}")
+    return lines
 
 
 def _scene_item_usda(section: str, item: dict[str, Any], indent: str = "        ") -> str:
@@ -157,6 +172,7 @@ def _scene_item_usda(section: str, item: dict[str, Any], indent: str = "        
     scale = tuple(_as_tuple(item["scale"], 3, f"{item_id}.scale"))
     color = tuple(_as_tuple(item["color"], 3, f"{item_id}.color"))
     custom_data = _custom_data_block(_custom_data_for(section, item), indent + "    ")
+    metadata = f" (\n{custom_data}\n{indent})" if custom_data else ""
     radius_line = f"\n{indent}    double radius = 1" if prim_type == "Sphere" else ""
     opacity_line = (
         f"\n{indent}    float[] primvars:displayOpacity = [{float(item['opacity'])}]"
@@ -164,9 +180,9 @@ def _scene_item_usda(section: str, item: dict[str, Any], indent: str = "        
         else ""
     )
 
-    return f"""{indent}def {prim_type} "{item_id}"
+    return f"""{indent}def {prim_type} "{item_id}"{metadata}
 {indent}{{
-{custom_data}{radius_line}
+{radius_line}
 {indent}    color3f[] primvars:displayColor = [{color}]{opacity_line}
 {indent}    double3 xformOp:translate = {translation}
 {indent}    float3 xformOp:scale = {scale}
@@ -203,9 +219,14 @@ def create_with_usda_fallback(layout: dict[str, Any], output: Path) -> None:
 
 def Xform "World"
 {{
-    def Cube "Ground"
+    def Cube "Ground" (
+        customData = {{
+            dictionary ops = {{
+                string id = "Factory_Floor"
+            }}
+        }}
+    )
     {{
-        customData = {{ string ops:id = "Factory_Floor" }}
         color3f[] primvars:displayColor = [(0.22, 0.23, 0.24)]
         double3 xformOp:translate = (0, 0, -0.035)
         float3 xformOp:scale = (5.2, 2.2, 0.035)

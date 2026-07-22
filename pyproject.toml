@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omniverse-ops-starter"
-version = "0.2.0"
-description = "A data-driven NVIDIA Omniverse and OpenUSD factory digital twin starter project."
+version = "0.5.0"
+description = "A data-driven NVIDIA Omniverse and OpenUSD factory digital twin starter with USD variants, live telemetry, and AMR scenario assets."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

@@ -94,8 +94,67 @@ const FALLBACK_LAYOUT = {
   ],
 };
 
+const FALLBACK_SCENARIOS = {
+  default: "baseline",
+  variants: [
+    {
+      id: "baseline",
+      label: "Baseline",
+      description: "Normal factory operations.",
+      throughput_multiplier: 1,
+      oee_delta: 0,
+      sensor_offsets: { Temperature_01: 0, Pressure_01: 0, Vibration_01: 0 },
+      equipment_status: { Conveyor_A: "running", Robot_Cell_B: "ready", Inspection_C: "watch" },
+    },
+    {
+      id: "peak_hour",
+      label: "Peak Hour",
+      description: "Higher inbound volume pushes pressure close to the threshold.",
+      throughput_multiplier: 1.18,
+      oee_delta: -0.03,
+      sensor_offsets: { Temperature_01: 2.6, Pressure_01: 0.38, Vibration_01: 0.24 },
+      equipment_status: { Conveyor_A: "running", Robot_Cell_B: "busy", Inspection_C: "watch" },
+    },
+    {
+      id: "maintenance",
+      label: "Maintenance",
+      description: "Robot cell is isolated while AMR uses a bypass path.",
+      throughput_multiplier: 0.62,
+      oee_delta: -0.16,
+      sensor_offsets: { Temperature_01: -1.2, Pressure_01: -0.5, Vibration_01: 0.12 },
+      equipment_status: { Conveyor_A: "running", Robot_Cell_B: "maintenance", Inspection_C: "ready" },
+    },
+  ],
+};
+
+const FALLBACK_AMR_ROUTES = {
+  robots: [
+    {
+      id: "AMR_01",
+      role: "line-side material runner",
+      base_pose: [-3.8, -1.42, 0.16],
+      scale: [0.36, 0.24, 0.12],
+      color: [0.18, 0.2, 0.24],
+      payload_kg: 35,
+      max_speed_mps: 1.1,
+      route: ["Dock_Inbound", "Conveyor_Drop", "Inspection_Pickup", "Dock_Outbound"],
+    },
+  ],
+  waypoints: [
+    { id: "Dock_Inbound", translation: [-3.8, -1.42, 0.12], task: "load empty bin" },
+    { id: "Conveyor_Drop", translation: [-1.35, -1.42, 0.12], task: "drop bin near inbound conveyor" },
+    { id: "Inspection_Pickup", translation: [2.55, -1.42, 0.12], task: "pick inspected output" },
+    { id: "Dock_Outbound", translation: [4.05, -1.42, 0.12], task: "stage outbound bin" },
+  ],
+  safety: { avoid_zones: ["Robot_Cell_Safety"], preferred_lane: "Forklift_Lane", min_clearance_m: 0.45 },
+};
+
 const state = {
   layout: FALLBACK_LAYOUT,
+  scenarios: FALLBACK_SCENARIOS,
+  amrRoutes: FALLBACK_AMR_ROUTES,
+  telemetry: null,
+  telemetryConnected: false,
   selected: null,
   running: true,
   tick: 0,
@@ -106,6 +165,7 @@ const state = {
     sensors: true,
     zones: true,
     flow: true,
+    robots: true,
   },
   hitTargets: [],
   throughputHistory: Array.from({ length: 24 }, (_, index) => 860 + Math.round(Math.sin(index / 2) * 48)),
@@ -126,6 +186,12 @@ const primCount = document.querySelector("#prim-count");
 const toggleSim = document.querySelector("#toggle-sim");
 const toggleIcon = document.querySelector("#toggle-icon");
 const speedRange = document.querySelector("#speed-range");
+const liveStatus = document.querySelector("#live-status");
+const scenarioGrid = document.querySelector("#scenario-grid");
+const amrName = document.querySelector("#amr-name");
+const amrTask = document.querySelector("#amr-task");
+const amrProgress = document.querySelector("#amr-progress");
+const amrPosition = document.querySelector("#amr-position");
 
 function usdColor(rgb, alpha = 1) {
   const [r, g, b] = rgb.map((value) => Math.round(value * 255));
@@ -147,19 +213,47 @@ function assetKind(asset) {
   if (state.layout.equipment.includes(asset)) return "equipment";
   if (state.layout.sensors.includes(asset)) return "sensor";
   if (state.layout.safety_zones.includes(asset)) return "zone";
+  if (state.amrRoutes.robots.includes(asset)) return "robot";
+  if (state.amrRoutes.waypoints.includes(asset)) return "waypoint";
   return "flow";
 }
 
+function activeScenario() {
+  return (
+    state.scenarios.variants.find((scenario) => scenario.id === state.scenario) ||
+    state.scenarios.variants.find((scenario) => scenario.id === state.scenarios.default) ||
+    state.scenarios.variants[0]
+  );
+}
+
+function telemetrySensor(sensorId) {
+  return state.telemetry?.sensors?.find((sensor) => sensor.id === sensorId);
+}
+
+function telemetryEquipment(equipmentId) {
+  return state.telemetry?.equipment?.find((item) => item.id === equipmentId);
+}
+
 function scenarioSensorValue(sensor) {
+  const liveSensor = telemetrySensor(sensor.id);
+  if (liveSensor) return liveSensor.value;
+  const scenario = activeScenario();
+  const scenarioOffset = scenario?.sensor_offsets?.[sensor.id] || 0;
   const wave = Math.sin(state.tick / 18 + sensor.id.length) * 0.08;
-  const pressureBoost = state.scenario === "pressure" && sensor.id === "Pressure_01" ? 0.42 : 0;
-  const robotBoost = state.scenario === "robot" && sensor.id === "Vibration_01" ? 0.3 : 0;
-  return sensor.value * (1 + wave + pressureBoost + robotBoost);
+  return sensor.value * (1 + wave) + scenarioOffset;
 }
 
 function statusFor(asset) {
-  if (asset.id === "Pressure_01" && state.scenario === "pressure") return "watch";
-  if (asset.id === "Vibration_01" && state.scenario === "robot") return "watch";
+  const liveSensor = telemetrySensor(asset.id);
+  if (liveSensor) return liveSensor.status;
+  const liveEquipment = telemetryEquipment(asset.id);
+  if (liveEquipment) return liveEquipment.status;
+  if (assetKind(asset) === "equipment") {
+    return activeScenario()?.equipment_status?.[asset.id] || asset.status || "nominal";
+  }
+  if (assetKind(asset) === "sensor") {
+    return scenarioSensorValue(asset) / asset.threshold >= 0.92 ? "watch" : "nominal";
+  }
   return asset.status || "nominal";
 }
 
@@ -286,6 +380,75 @@ function drawFlowMarkers() {
   });
 }
 
+function currentAmrState() {
+  if (state.telemetry?.amr) return state.telemetry.amr;
+  const robot = state.amrRoutes.robots[0];
+  if (!robot) return null;
+  const waypointMap = Object.fromEntries(state.amrRoutes.waypoints.map((waypoint) => [waypoint.id, waypoint]));
+  const route = robot.route.map((waypointId) => waypointMap[waypointId]).filter(Boolean);
+  if (!route.length) return null;
+  const segment = Math.floor(state.tick / 32) % route.length;
+  const nextSegment = (segment + 1) % route.length;
+  const progress = (state.tick % 32) / 32;
+  const start = route[segment].translation;
+  const end = route[nextSegment].translation;
+  const position = start.map((value, index) => value + (end[index] - value) * progress);
+  return {
+    id: robot.id,
+    position,
+    next_waypoint: route[nextSegment].id,
+    task: route[nextSegment].task,
+    progress,
+    payload_kg: robot.payload_kg,
+  };
+}
+
+function drawRobots() {
+  const route = state.amrRoutes.waypoints || [];
+  ctx.strokeStyle = "rgba(32, 35, 38, 0.55)";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([12, 8]);
+  ctx.beginPath();
+  route.forEach((waypoint, index) => {
+    const point = mapPoint(waypoint.translation);
+    if (index === 0) ctx.moveTo(point.x, point.y);
+    else ctx.lineTo(point.x, point.y);
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  route.forEach((waypoint) => {
+    const point = mapPoint(waypoint.translation);
+    ctx.beginPath();
+    ctx.fillStyle = "#202326";
+    ctx.strokeStyle = "rgba(255, 253, 249, 0.9)";
+    ctx.lineWidth = 3;
+    ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    state.hitTargets.push({ asset: waypoint, x: point.x - 16, y: point.y - 16, width: 32, height: 32 });
+  });
+
+  const amr = currentAmrState();
+  const robot = state.amrRoutes.robots[0];
+  if (!amr || !robot) return;
+  const point = mapPoint(amr.position);
+  ctx.save();
+  ctx.translate(point.x, point.y);
+  ctx.fillStyle = usdColor(robot.color, 0.95);
+  ctx.strokeStyle = "#fffdf9";
+  ctx.lineWidth = 3;
+  roundedRect(-24, -15, 48, 30, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#fffdf9";
+  ctx.font = "900 10px Inter, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("AMR", 0, 4);
+  ctx.restore();
+  state.hitTargets.push({ asset: robot, x: point.x - 28, y: point.y - 20, width: 56, height: 40 });
+}
+
 function draw() {
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
@@ -296,6 +459,7 @@ function draw() {
   if (state.layers.flow) drawFlowMarkers();
   if (state.layers.equipment) state.layout.equipment.forEach(drawEquipment);
   if (state.layers.sensors) state.layout.sensors.forEach(drawSensor);
+  if (state.layers.robots) drawRobots();
 }
 
 function metricPairs(asset) {
@@ -319,6 +483,22 @@ function metricPairs(asset) {
       ["Station", asset.id.replaceAll("_", " ")],
       ["Position", `${asset.translation[0]}m, ${asset.translation[1]}m`],
       ["USD path", `/World/FlowMarkers/${asset.id}`],
+    ];
+  }
+  if (assetKind(asset) === "waypoint") {
+    return [
+      ["Task", asset.task],
+      ["Position", `${asset.translation[0]}m, ${asset.translation[1]}m`],
+      ["USD path", `/World/AMRRoute/${asset.id}`],
+    ];
+  }
+  if (assetKind(asset) === "robot") {
+    const amr = currentAmrState();
+    return [
+      ["Payload", `${asset.payload_kg} kg`],
+      ["Max speed", `${asset.max_speed_mps} m/s`],
+      ["Next waypoint", amr?.next_waypoint || asset.route[0]],
+      ["USD path", `/World/Robots/${asset.id}`],
     ];
   }
   const metrics = Object.entries(asset.metrics || {}).map(([key, value]) => [
@@ -351,15 +531,16 @@ function selectAsset(asset) {
 function renderKpis() {
   const sensors = state.layout.sensors;
   const warningCount = sensors.filter((sensor) => scenarioSensorValue(sensor) / sensor.threshold >= 0.92).length;
-  const avgOee =
-    state.layout.equipment.reduce((sum, item) => sum + (item.metrics?.oee || 0.88), 0) /
-    state.layout.equipment.length;
+  const baseOee =
+    state.layout.equipment.reduce((sum, item) => sum + (item.metrics?.oee || 0.88), 0) / state.layout.equipment.length;
+  const scenarioOee = Math.min(0.99, Math.max(0, baseOee + (activeScenario()?.oee_delta || 0)));
+  const oee = state.telemetry?.kpis?.oee || scenarioOee;
   const throughput = currentThroughput();
   const kpis = [
-    ["OEE", `${Math.round(avgOee * 100)}%`, "+3.1% vs plan"],
+    ["OEE", `${Math.round(oee * 100)}%`, state.telemetryConnected ? "live feed" : "scenario"],
     ["Throughput", `${throughput}/hr`, "live takt"],
     ["Sensors", String(sensors.length), `${warningCount} watch`],
-    ["Assets", String(state.layout.equipment.length), "USD prims"],
+    ["AMR", state.amrRoutes.robots[0]?.id || "1", currentAmrState()?.next_waypoint || "route"],
   ];
   kpiGrid.innerHTML = "";
   kpis.forEach(([label, value, sub]) => {
@@ -368,7 +549,10 @@ function renderKpis() {
     node.innerHTML = `<span>${label}</span><strong>${value}</strong><em>${sub}</em>`;
     kpiGrid.append(node);
   });
-  alertLoad.textContent = String(warningCount + state.layout.equipment.filter((item) => item.status === "watch").length);
+  alertLoad.textContent = String(
+    state.telemetry?.kpis?.alert_load ??
+      warningCount + state.layout.equipment.filter((item) => statusFor(item) === "watch").length,
+  );
   throughputValue.textContent = `${throughput}/hr`;
 }
 
@@ -402,11 +586,44 @@ function renderSparkline() {
   });
 }
 
+function renderAmrMission() {
+  const robot = state.amrRoutes.robots[0];
+  const amr = currentAmrState();
+  if (!robot || !amr) return;
+  amrName.textContent = robot.id;
+  amrTask.textContent = `${amr.task} -> ${amr.next_waypoint}`;
+  amrProgress.style.width = `${Math.round((amr.progress || 0) * 100)}%`;
+  amrPosition.textContent = `x ${amr.position[0].toFixed(2)} / y ${amr.position[1].toFixed(2)} / payload ${amr.payload_kg} kg`;
+}
+
+function renderScenarios() {
+  scenarioGrid.innerHTML = "";
+  state.scenarios.variants.forEach((scenario) => {
+    const button = document.createElement("button");
+    button.className = `scenario${scenario.id === state.scenario ? " active" : ""}`;
+    button.dataset.scenario = scenario.id;
+    button.type = "button";
+    const effect =
+      scenario.throughput_multiplier === 1
+        ? `${Math.round((1 + scenario.oee_delta) * 87)}%`
+        : `${Math.round((scenario.throughput_multiplier - 1) * 100)}%`;
+    button.innerHTML = `<span>${scenario.label}</span><strong>${effect}</strong>`;
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".scenario").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      state.scenario = scenario.id;
+      state.telemetry = null;
+      renderAll();
+    });
+    scenarioGrid.append(button);
+  });
+}
+
 function currentThroughput() {
+  if (state.telemetry?.kpis?.throughput_per_hour) return state.telemetry.kpis.throughput_per_hour;
   const base = state.layout.equipment[0]?.metrics?.throughput_per_hour || 900;
-  const pressurePenalty = state.scenario === "pressure" ? 0.93 : 1;
-  const robotPenalty = state.scenario === "robot" ? 0.96 : 1;
-  return Math.round((base + Math.sin(state.tick / 20) * 35) * pressurePenalty * robotPenalty);
+  const multiplier = activeScenario()?.throughput_multiplier || 1;
+  return Math.round((base + Math.sin(state.tick / 20) * 35) * multiplier);
 }
 
 function renderAll() {
@@ -416,11 +633,16 @@ function renderAll() {
       state.layout.equipment.length +
       state.layout.sensors.length +
       state.layout.safety_zones.length +
-      state.layout.flow_markers.length,
+      state.layout.flow_markers.length +
+      2 +
+      state.amrRoutes.robots.length +
+      state.amrRoutes.waypoints.length +
+      1,
   );
   renderKpis();
   renderSensors();
   renderSparkline();
+  renderAmrMission();
   selectAsset(state.selected || state.layout.equipment[0]);
 }
 
@@ -433,6 +655,7 @@ function updateLoop() {
       renderKpis();
       renderSensors();
       renderSparkline();
+      renderAmrMission();
       if (state.selected) selectAsset(state.selected);
     }
     draw();
@@ -465,15 +688,6 @@ function bindControls() {
     });
   });
 
-  document.querySelectorAll(".scenario").forEach((button) => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll(".scenario").forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
-      state.scenario = button.dataset.scenario;
-      renderAll();
-    });
-  });
-
   canvas.addEventListener("click", (event) => {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -487,22 +701,76 @@ function bindControls() {
   window.addEventListener("resize", resizeCanvas);
 }
 
-async function loadLayout() {
+async function loadJson(path, fallback) {
   try {
-    const response = await fetch("../data/factory_layout.json", { cache: "no-store" });
+    const response = await fetch(path, { cache: "no-store" });
     if (response.ok) {
-      state.layout = await response.json();
+      return await response.json();
     }
   } catch {
-    state.layout = FALLBACK_LAYOUT;
   }
+  return fallback;
+}
+
+function setTelemetryStatus(connected) {
+  state.telemetryConnected = connected;
+  liveStatus.classList.toggle("connected", connected);
+  liveStatus.querySelector("strong").textContent = connected ? "Live WS" : "Local sim";
+}
+
+function telemetryUrl() {
+  if (location.protocol === "http:" || location.protocol === "https:") {
+    return `ws://${location.hostname || "127.0.0.1"}:8766/ws`;
+  }
+  return "ws://127.0.0.1:8766/ws";
+}
+
+function connectTelemetry() {
+  let socket;
+  try {
+    socket = new WebSocket(telemetryUrl());
+  } catch {
+    setTelemetryStatus(false);
+    return;
+  }
+
+  socket.addEventListener("open", () => setTelemetryStatus(true));
+  socket.addEventListener("message", (event) => {
+    const payload = JSON.parse(event.data);
+    if (payload.type !== "telemetry") return;
+    state.telemetry = payload;
+    state.scenario = payload.scenario || state.scenario;
+    state.tick = payload.sequence || state.tick;
+    state.throughputHistory.push(payload.kpis.throughput_per_hour);
+    state.throughputHistory = state.throughputHistory.slice(-24);
+    renderScenarios();
+    renderKpis();
+    renderSensors();
+    renderSparkline();
+    renderAmrMission();
+    if (state.selected) selectAsset(state.selected);
+    draw();
+  });
+  socket.addEventListener("close", () => {
+    setTelemetryStatus(false);
+    state.telemetry = null;
+    setTimeout(connectTelemetry, 2400);
+  });
+  socket.addEventListener("error", () => {
+    setTelemetryStatus(false);
+  });
 }
 
 async function init() {
-  await loadLayout();
+  state.layout = await loadJson("../data/factory_layout.json", FALLBACK_LAYOUT);
+  state.scenarios = await loadJson("../data/ops_scenarios.json", FALLBACK_SCENARIOS);
+  state.amrRoutes = await loadJson("../data/amr_routes.json", FALLBACK_AMR_ROUTES);
+  state.scenario = state.scenarios.default || state.scenario;
   bindControls();
   resizeCanvas();
+  renderScenarios();
   renderAll();
+  connectTelemetry();
   updateLoop();
 }
 

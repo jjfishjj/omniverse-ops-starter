@@ -21,6 +21,7 @@
 body {
   min-width: 320px;
   margin: 0;
+  overflow-x: hidden;
   background:
     linear-gradient(135deg, rgba(37, 99, 235, 0.08), transparent 34%),
     linear-gradient(315deg, rgba(25, 150, 106, 0.1), transparent 32%),
@@ -129,6 +130,39 @@ h2 {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 750;
+}
+
+.live-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.live-status span {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.live-status strong {
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.live-status.connected span {
+  background: var(--green);
+  box-shadow: 0 0 0 5px rgba(25, 150, 106, 0.12);
+}
+
+.live-status.connected strong {
+  color: var(--green);
 }
 
 .speed-control input {
@@ -430,6 +464,42 @@ h2 {
   font-weight: 800;
 }
 
+.amr-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.amr-card strong {
+  font-size: 1rem;
+}
+
+.amr-card span,
+.amr-card small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.progress-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.progress-track i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue), var(--green));
+  transition: width 220ms ease;
+}
+
 @media (max-width: 1180px) {
   .dashboard {
     grid-template-columns: minmax(220px, 280px) 1fr;
@@ -438,7 +508,7 @@ h2 {
   .right-panel {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .panel-section,
@@ -470,6 +540,7 @@ h2 {
   .toolbar,
   .view-toggles {
     flex-wrap: wrap;
+    width: 100%;
   }
 
   .dashboard,
@@ -496,5 +567,68 @@ h2 {
 
   .timeline {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  h1 {
+    font-size: 1.7rem;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: 42px 42px minmax(92px, 1fr);
+  }
+
+  .live-status,
+  .speed-control {
+    min-width: 0;
+    padding: 0 10px;
+  }
+
+  .speed-control {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .speed-control input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .kpi-grid,
+  .scenario-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sensor-row button {
+    grid-template-columns: 1fr;
+  }
+
+  .sensor-row span,
+  .sensor-row strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .sensor-row strong {
+    text-align: left;
+  }
+
+  .contract-list div {
+    align-items: flex-start;
+    flex-direction: column;
+    min-height: 54px;
+  }
+
+  .view-toggles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toggle {
+    width: 100%;
+    padding: 0 8px;
   }
 }

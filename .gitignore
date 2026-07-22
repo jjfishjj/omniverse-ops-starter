@@ -10,4 +10,7 @@ build/
 output/*.usd
 output/*.usdc
 output/*.usda
+output/**/*.usd
+output/**/*.usdc
+output/**/*.usda
 !output/.gitkeep

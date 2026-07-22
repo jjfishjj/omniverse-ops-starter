@@ -29,7 +29,27 @@ python -m pip install -e .
 ```bash
 python scripts/create_demo_stage.py --output output/demo_factory.usda
 python scripts/validate_stage.py output/demo_factory.usda
+python scripts/create_layered_stage.py --output-dir output/layers
+python scripts/validate_layered_stage.py output/layers/factory_composed.usda
 python -m unittest discover -s tests
+```
+
+## Live telemetry
+
+```bash
+python scripts/telemetry_server.py --scenario peak_hour
+```
+
+另開一個 terminal 啟動靜態 web server：
+
+```bash
+python3 -m http.server 8765
+```
+
+瀏覽：
+
+```text
+http://127.0.0.1:8765/web-demo/
 ```
 
 ## Omniverse / Kit SDK

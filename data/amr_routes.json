@@ -1,0 +1,51 @@
+{
+  "robots": [
+    {
+      "id": "AMR_01",
+      "role": "line-side material runner",
+      "usd_path": "/World/Robots/AMR_01",
+      "base_pose": [-3.8, -1.42, 0.16],
+      "scale": [0.36, 0.24, 0.12],
+      "color": [0.18, 0.2, 0.24],
+      "payload_kg": 35,
+      "max_speed_mps": 1.1,
+      "route": ["Dock_Inbound", "Conveyor_Drop", "Inspection_Pickup", "Dock_Outbound"],
+      "isaac": {
+        "robot_type": "wheeled_robot",
+        "controller": "differential_drive",
+        "notes": "Replace the capsule proxy with an Isaac Sim wheeled robot asset when running in a full Isaac environment."
+      }
+    }
+  ],
+  "waypoints": [
+    {
+      "id": "Dock_Inbound",
+      "translation": [-3.8, -1.42, 0.12],
+      "wait_seconds": 2.0,
+      "task": "load empty bin"
+    },
+    {
+      "id": "Conveyor_Drop",
+      "translation": [-1.35, -1.42, 0.12],
+      "wait_seconds": 1.5,
+      "task": "drop bin near inbound conveyor"
+    },
+    {
+      "id": "Inspection_Pickup",
+      "translation": [2.55, -1.42, 0.12],
+      "wait_seconds": 2.0,
+      "task": "pick inspected output"
+    },
+    {
+      "id": "Dock_Outbound",
+      "translation": [4.05, -1.42, 0.12],
+      "wait_seconds": 2.5,
+      "task": "stage outbound bin"
+    }
+  ],
+  "safety": {
+    "avoid_zones": ["Robot_Cell_Safety"],
+    "preferred_lane": "Forklift_Lane",
+    "min_clearance_m": 0.45
+  }
+}

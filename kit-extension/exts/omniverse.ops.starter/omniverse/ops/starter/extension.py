@@ -93,6 +93,23 @@ FLOW_MARKERS = [
     ("Outbound", (4.05, -0.08, 0.18), (0.95, 0.78, 0.12)),
 ]
 
+AMR_ROBOT = {
+    "id": "AMR_01",
+    "role": "line-side material runner",
+    "translation": (-3.8, -1.42, 0.16),
+    "scale": (0.36, 0.24, 0.12),
+    "color": (0.18, 0.20, 0.24),
+    "payload_kg": 35,
+    "max_speed_mps": 1.1,
+}
+
+AMR_WAYPOINTS = [
+    ("Dock_Inbound", (-3.8, -1.42, 0.12), "load empty bin"),
+    ("Conveyor_Drop", (-1.35, -1.42, 0.12), "drop bin near inbound conveyor"),
+    ("Inspection_Pickup", (2.55, -1.42, 0.12), "pick inspected output"),
+    ("Dock_Outbound", (4.05, -1.42, 0.12), "stage outbound bin"),
+]
+
 
 def _set_transform(schema, translation, scale=None, rotation=None) -> None:
     xformable = UsdGeom.Xformable(schema.GetPrim())
@@ -150,8 +167,11 @@ class OmniverseOpsStarterExtension(omni.ext.IExt):
             "/World/Sensors",
             "/World/SafetyZones",
             "/World/FlowMarkers",
+            "/World/Robots",
+            "/World/AMRRoute",
             "/World/Lighting",
             "/World/Cameras",
+            "/World/IsaacScenario",
         ]:
             UsdGeom.Xform.Define(stage, path)
 
@@ -186,6 +206,31 @@ class OmniverseOpsStarterExtension(omni.ext.IExt):
             _set_display(marker, color)
             marker.GetPrim().SetCustomDataByKey("ops:id", marker_id)
             marker.GetPrim().SetCustomDataByKey("ops:section", "flow_markers")
+
+        amr = UsdGeom.Cube.Define(stage, f"/World/Robots/{AMR_ROBOT['id']}")
+        _set_transform(amr, AMR_ROBOT["translation"], AMR_ROBOT["scale"])
+        _set_display(amr, AMR_ROBOT["color"])
+        amr.GetPrim().SetCustomDataByKey("ops:id", AMR_ROBOT["id"])
+        amr.GetPrim().SetCustomDataByKey("ops:section", "robots")
+        amr.GetPrim().SetCustomDataByKey("ops:role", AMR_ROBOT["role"])
+        amr.GetPrim().SetCustomDataByKey("ops:payload_kg", AMR_ROBOT["payload_kg"])
+        amr.GetPrim().SetCustomDataByKey("ops:max_speed_mps", AMR_ROBOT["max_speed_mps"])
+        amr.GetPrim().SetCustomDataByKey("isaac:robot_type", "wheeled_robot")
+        amr.GetPrim().SetCustomDataByKey("isaac:controller", "differential_drive")
+
+        for waypoint_id, translation, task in AMR_WAYPOINTS:
+            waypoint = UsdGeom.Sphere.Define(stage, f"/World/AMRRoute/{waypoint_id}")
+            waypoint.CreateRadiusAttr(1.0)
+            _set_transform(waypoint, translation, (0.11, 0.11, 0.11))
+            _set_display(waypoint, (0.18, 0.20, 0.24))
+            waypoint.GetPrim().SetCustomDataByKey("ops:id", waypoint_id)
+            waypoint.GetPrim().SetCustomDataByKey("ops:section", "amr_waypoints")
+            waypoint.GetPrim().SetCustomDataByKey("ops:task", task)
+
+        isaac_scenario = UsdGeom.Xform.Define(stage, "/World/IsaacScenario")
+        isaac_scenario.GetPrim().SetCustomDataByKey("isaac:scenario", "amr_material_run")
+        isaac_scenario.GetPrim().SetCustomDataByKey("isaac:preferred_lane", "Forklift_Lane")
+        isaac_scenario.GetPrim().SetCustomDataByKey("isaac:min_clearance_m", 0.45)
 
         key_light = UsdLux.DistantLight.Define(stage, "/World/Lighting/KeyLight")
         key_light.CreateIntensityAttr(650.0)
