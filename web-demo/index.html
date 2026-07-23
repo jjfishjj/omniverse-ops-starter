@@ -93,6 +93,44 @@
             <div class="status-pill" id="asset-status">running</div>
             <dl class="asset-metrics" id="asset-metrics"></dl>
           </section>
+          <section class="panel-section pipeline-section">
+            <p class="section-label">Pipeline</p>
+            <div class="pipeline-detail" id="pipeline-detail" aria-live="polite">
+              <strong id="pipeline-title">JSON Layout</strong>
+              <p id="pipeline-copy">Factory layout JSON drives the visible equipment, sensors, zones, and AMR data.</p>
+              <dl id="pipeline-effects"></dl>
+            </div>
+            <div class="pipeline" id="pipeline">
+              <button class="pipeline-step active" data-pipeline="json" type="button" aria-pressed="true">
+                <span>JSON Layout</span>
+                <small>single source</small>
+              </button>
+              <button class="pipeline-step" data-pipeline="usd" type="button" aria-pressed="false">
+                <span>USD Layers + Variants</span>
+                <small>opsScenario</small>
+              </button>
+              <button class="pipeline-step" data-pipeline="telemetry" type="button" aria-pressed="false">
+                <span>WebSocket Telemetry</span>
+                <small>live data</small>
+              </button>
+              <button class="pipeline-step" data-pipeline="isaac" type="button" aria-pressed="false">
+                <span>Isaac AMR Scenario</span>
+                <small>robot route</small>
+              </button>
+              <button class="pipeline-step" data-pipeline="stage" type="button" aria-pressed="false">
+                <span>OpenUSD Stage</span>
+                <small>composed scene</small>
+              </button>
+              <button class="pipeline-step" data-pipeline="kit" type="button" aria-pressed="false">
+                <span>Kit Extension</span>
+                <small>Omniverse UI</small>
+              </button>
+              <button class="pipeline-step" data-pipeline="web" type="button" aria-pressed="false">
+                <span>Web Demo</span>
+                <small>dashboard</small>
+              </button>
+            </div>
+          </section>
           <section class="panel-section">
             <p class="section-label">Scenario</p>
             <div class="scenario-grid" id="scenario-grid">
@@ -117,18 +155,6 @@
               <span id="amr-task">Awaiting route data</span>
               <div class="progress-track"><i id="amr-progress"></i></div>
               <small id="amr-position">x 0.00 / y 0.00</small>
-            </div>
-          </section>
-          <section class="panel-section">
-            <p class="section-label">Pipeline</p>
-            <div class="pipeline">
-              <span>JSON Layout</span>
-              <span>USD Layers + Variants</span>
-              <span>WebSocket Telemetry</span>
-              <span>Isaac AMR Scenario</span>
-              <span>OpenUSD Stage</span>
-              <span>Kit Extension</span>
-              <span>Web Demo</span>
             </div>
           </section>
         </aside>

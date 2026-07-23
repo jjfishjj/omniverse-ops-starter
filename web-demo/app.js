@@ -192,6 +192,133 @@ const amrName = document.querySelector("#amr-name");
 const amrTask = document.querySelector("#amr-task");
 const amrProgress = document.querySelector("#amr-progress");
 const amrPosition = document.querySelector("#amr-position");
+const pipelineTitle = document.querySelector("#pipeline-title");
+const pipelineCopy = document.querySelector("#pipeline-copy");
+const pipelineEffects = document.querySelector("#pipeline-effects");
+
+const PIPELINE_STEPS = {
+  json: {
+    title: "JSON Layout",
+    copy: "Factory layout JSON is the source of truth for equipment, sensors, safety zones, flow markers, and AMR routes.",
+    effects: [
+      ["Source", "factory_layout.json"],
+      ["Visible change", "Conveyor selected"],
+      ["Why it matters", "Data can regenerate USD and web views"],
+    ],
+    action: () => {
+      state.scenario = state.scenarios.default || "baseline";
+      setLayerVisible("equipment", true);
+      setLayerVisible("sensors", true);
+      renderScenarios();
+      renderAll();
+      selectAssetById("Conveyor_A");
+    },
+    focus: ".left-panel",
+  },
+  usd: {
+    title: "USD Layers + Variants",
+    copy: "The OpenUSD stage composes base layout data with an opsScenario variant so the same factory can show baseline, peak, or maintenance behavior.",
+    effects: [
+      ["Variant set", "opsScenario"],
+      ["Visible change", "Peak Hour selected"],
+      ["Inspector", "Sensor values move toward watch state"],
+    ],
+    action: () => {
+      state.scenario = "peak_hour";
+      state.telemetry = null;
+      setLayerVisible("zones", true);
+      setLayerVisible("flow", true);
+      renderScenarios();
+      renderAll();
+      selectAssetById("Pressure_01");
+    },
+    focus: "#scenario-grid",
+  },
+  telemetry: {
+    title: "WebSocket Telemetry",
+    copy: "A live WebSocket feed can replace the local simulation values without changing the dashboard components.",
+    effects: [
+      ["Endpoint", "ws://127.0.0.1:8766/ws"],
+      ["Visible change", "KPI history advances"],
+      ["Fallback", "Local sim keeps moving offline"],
+    ],
+    action: () => {
+      state.tick += state.speed * 10;
+      state.throughputHistory.push(currentThroughput());
+      state.throughputHistory = state.throughputHistory.slice(-24);
+      renderKpis();
+      renderSensors();
+      renderSparkline();
+      selectAssetById("Temperature_01");
+    },
+    focus: "#live-status",
+  },
+  isaac: {
+    title: "Isaac AMR Scenario",
+    copy: "The AMR mission data describes the route, payload, waypoints, and safety lane that can be mirrored into Isaac Sim.",
+    effects: [
+      ["Robot", "AMR_01"],
+      ["Visible change", "AMR route highlighted"],
+      ["Robotics value", "Path planning and safety checks"],
+    ],
+    action: () => {
+      setLayerVisible("robots", true);
+      state.tick += 16;
+      renderAmrMission();
+      draw();
+      selectAssetById("AMR_01");
+    },
+    focus: ".amr-card",
+  },
+  stage: {
+    title: "OpenUSD Stage",
+    copy: "The composed stage exposes prim paths, units, Z-up metadata, and scene hierarchy that Omniverse tools can inspect.",
+    effects: [
+      ["Stage", "Z-up meters"],
+      ["Visible change", "USD Contract emphasized"],
+      ["Prim count", "Updates from loaded data"],
+    ],
+    action: () => {
+      renderAll();
+      selectAssetById("Inspection_C");
+    },
+    focus: ".contract-list",
+  },
+  kit: {
+    title: "Kit Extension",
+    copy: "A Kit extension can load the same project data inside Omniverse, create the stage, and expose operational controls for artists or engineers.",
+    effects: [
+      ["Target", "Omniverse Kit"],
+      ["Visible change", "Inspector shows robot cell"],
+      ["Workflow", "Web and Kit share scene data"],
+    ],
+    action: () => {
+      state.scenario = "maintenance";
+      renderScenarios();
+      renderAll();
+      selectAssetById("Robot_Cell_B");
+    },
+    focus: ".inspector",
+  },
+  web: {
+    title: "Web Demo",
+    copy: "The browser dashboard turns the digital twin into an explainable portfolio demo with layer filters, scenarios, telemetry, and inspection.",
+    effects: [
+      ["Audience", "Portfolio reviewers"],
+      ["Visible change", "Layer controls emphasized"],
+      ["Interaction", "Buttons visibly change the twin"],
+    ],
+    action: () => {
+      setLayerVisible("equipment", true);
+      setLayerVisible("sensors", true);
+      setLayerVisible("zones", true);
+      setLayerVisible("flow", true);
+      setLayerVisible("robots", true);
+      draw();
+    },
+    focus: ".view-toggles",
+  },
+};
 
 function usdColor(rgb, alpha = 1) {
   const [r, g, b] = rgb.map((value) => Math.round(value * 255));
@@ -528,6 +655,64 @@ function selectAsset(asset) {
   draw();
 }
 
+function allInspectableAssets() {
+  return [
+    ...state.layout.equipment,
+    ...state.layout.sensors,
+    ...state.layout.safety_zones,
+    ...state.layout.flow_markers,
+    ...state.amrRoutes.robots,
+    ...state.amrRoutes.waypoints,
+  ];
+}
+
+function selectAssetById(assetId) {
+  const asset = allInspectableAssets().find((item) => item.id === assetId);
+  if (asset) selectAsset(asset);
+}
+
+function setLayerVisible(layer, visible) {
+  state.layers[layer] = visible;
+  const button = document.querySelector(`[data-layer="${layer}"]`);
+  if (button) button.classList.toggle("active", visible);
+}
+
+function guideFocus(selector) {
+  document.querySelectorAll(".guided-pulse").forEach((node) => node.classList.remove("guided-pulse"));
+  const target = document.querySelector(selector);
+  if (!target) return;
+  target.classList.add("guided-pulse");
+  window.setTimeout(() => target.classList.remove("guided-pulse"), 1800);
+}
+
+function renderPipelineEffects(effects) {
+  pipelineEffects.innerHTML = "";
+  effects.forEach(([label, value]) => {
+    const row = document.createElement("div");
+    const dt = document.createElement("dt");
+    const dd = document.createElement("dd");
+    dt.textContent = label;
+    dd.textContent = value;
+    row.append(dt, dd);
+    pipelineEffects.append(row);
+  });
+}
+
+function activatePipelineStep(stepId, options = {}) {
+  const step = PIPELINE_STEPS[stepId];
+  if (!step) return;
+  document.querySelectorAll(".pipeline-step").forEach((button) => {
+    const active = button.dataset.pipeline === stepId;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  pipelineTitle.textContent = step.title;
+  pipelineCopy.textContent = step.copy;
+  renderPipelineEffects(step.effects);
+  step.action();
+  if (options.focus !== false) guideFocus(step.focus);
+}
+
 function renderKpis() {
   const sensors = state.layout.sensors;
   const warningCount = sensors.filter((sensor) => scenarioSensorValue(sensor) / sensor.threshold >= 0.92).length;
@@ -698,6 +883,10 @@ function bindControls() {
     if (target) selectAsset(target.asset);
   });
 
+  document.querySelectorAll(".pipeline-step").forEach((button) => {
+    button.addEventListener("click", () => activatePipelineStep(button.dataset.pipeline));
+  });
+
   window.addEventListener("resize", resizeCanvas);
 }
 
@@ -770,6 +959,7 @@ async function init() {
   resizeCanvas();
   renderScenarios();
   renderAll();
+  activatePipelineStep("json", { focus: false });
   connectTelemetry();
   updateLoop();
 }

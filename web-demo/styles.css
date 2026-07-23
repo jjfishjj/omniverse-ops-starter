@@ -450,18 +450,107 @@ h2 {
 
 .pipeline {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
 
-.pipeline span {
-  min-height: 34px;
-  padding: 8px 10px;
+.pipeline-step {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
   border-left: 4px solid var(--blue);
   border-radius: 6px;
   background: var(--surface-2);
-  font-size: 0.85rem;
+  color: var(--ink);
+  text-align: left;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.pipeline-step:hover {
+  transform: translateY(-1px);
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.pipeline-step.active {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: rgba(37, 99, 235, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+.pipeline-step span {
+  font-size: 0.8rem;
   font-weight: 800;
+  line-height: 1.18;
+}
+
+.pipeline-step small {
+  color: var(--muted);
+  font-size: 0.69rem;
+  font-weight: 780;
+}
+
+.pipeline-detail {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.pipeline-detail strong {
+  font-size: 0.98rem;
+}
+
+.pipeline-detail p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.36;
+}
+
+.pipeline-detail dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.pipeline-detail div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.pipeline-detail dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.pipeline-detail dd {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-align: right;
+}
+
+.guided-pulse {
+  outline: 3px solid rgba(37, 99, 235, 0.32);
+  box-shadow: 0 0 0 7px rgba(37, 99, 235, 0.1);
+  transition:
+    outline-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .amr-card {
