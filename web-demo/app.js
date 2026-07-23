@@ -192,9 +192,46 @@ const amrName = document.querySelector("#amr-name");
 const amrTask = document.querySelector("#amr-task");
 const amrProgress = document.querySelector("#amr-progress");
 const amrPosition = document.querySelector("#amr-position");
+const stageSubtitle = document.querySelector("#stage-subtitle");
+const layerReadout = document.querySelector("#layer-readout");
+const layerTitle = document.querySelector("#layer-title");
+const layerCopy = document.querySelector("#layer-copy");
 const pipelineTitle = document.querySelector("#pipeline-title");
 const pipelineCopy = document.querySelector("#pipeline-copy");
 const pipelineEffects = document.querySelector("#pipeline-effects");
+
+const LAYER_INFO = {
+  equipment: {
+    title: "Equipment Layer",
+    active: "Machine cells and conveyors are visible as OpenUSD equipment prims.",
+    inactive: "Equipment prims are hidden; sensor, route, and zone context can be inspected alone.",
+    representative: "Conveyor_A",
+  },
+  sensors: {
+    title: "Sensors Layer",
+    active: "Live sensor prims are visible with threshold rings and warning color states.",
+    inactive: "Sensor prims are hidden; KPI values still update from the data model.",
+    representative: "Pressure_01",
+  },
+  zones: {
+    title: "Safety Zones Layer",
+    active: "Safety volumes and lane constraints are visible as translucent USD zone prims.",
+    inactive: "Safety zones are hidden so equipment and route geometry read more clearly.",
+    representative: "Robot_Cell_Safety",
+  },
+  flow: {
+    title: "Material Flow Layer",
+    active: "Numbered flow markers show inbound, robot handoff, inspection, and outbound movement.",
+    inactive: "Material flow markers are hidden while the factory assets remain composed.",
+    representative: "Inbound",
+  },
+  robots: {
+    title: "AMR Route Layer",
+    active: "The AMR route, waypoints, payload, and current robot pose are visible.",
+    inactive: "AMR route prims are hidden; production equipment and sensors remain visible.",
+    representative: "AMR_01",
+  },
+};
 
 const PIPELINE_STEPS = {
   json: {
@@ -327,9 +364,11 @@ function usdColor(rgb, alpha = 1) {
 
 function mapPoint([x, y]) {
   const bounds = { left: -4.8, right: 4.8, top: 2.25, bottom: -2.15 };
-  const padding = Math.min(canvas.width, canvas.height) * 0.09;
-  const usableWidth = canvas.width - padding * 2;
-  const usableHeight = canvas.height - padding * 2;
+  const width = canvas.clientWidth || canvas.width;
+  const height = canvas.clientHeight || canvas.height;
+  const padding = Math.min(width, height) * 0.09;
+  const usableWidth = width - padding * 2;
+  const usableHeight = height - padding * 2;
   return {
     x: padding + ((x - bounds.left) / (bounds.right - bounds.left)) * usableWidth,
     y: padding + ((bounds.top - y) / (bounds.top - bounds.bottom)) * usableHeight,
@@ -674,7 +713,11 @@ function selectAssetById(assetId) {
 function setLayerVisible(layer, visible) {
   state.layers[layer] = visible;
   const button = document.querySelector(`[data-layer="${layer}"]`);
-  if (button) button.classList.toggle("active", visible);
+  if (button) {
+    button.classList.toggle("active", visible);
+    button.setAttribute("aria-pressed", String(visible));
+  }
+  updateLayerReadout(layer);
 }
 
 function guideFocus(selector) {
@@ -683,6 +726,51 @@ function guideFocus(selector) {
   if (!target) return;
   target.classList.add("guided-pulse");
   window.setTimeout(() => target.classList.remove("guided-pulse"), 1800);
+}
+
+function layerItems(layer) {
+  if (layer === "equipment") return state.layout.equipment;
+  if (layer === "sensors") return state.layout.sensors;
+  if (layer === "zones") return state.layout.safety_zones;
+  if (layer === "flow") return state.layout.flow_markers;
+  if (layer === "robots") return [...state.amrRoutes.robots, ...state.amrRoutes.waypoints];
+  return [];
+}
+
+function visibleLayerCount() {
+  return Object.entries(state.layers).reduce((sum, [layer, visible]) => sum + (visible ? layerItems(layer).length : 0), 0);
+}
+
+function renderLayerControls() {
+  document.querySelectorAll(".toggle").forEach((button) => {
+    const layer = button.dataset.layer;
+    button.dataset.count = String(layerItems(layer).length);
+    button.classList.toggle("active", state.layers[layer]);
+    button.setAttribute("aria-pressed", String(Boolean(state.layers[layer])));
+  });
+}
+
+function updateLayerReadout(layer, flash = true) {
+  const activeLayers = Object.entries(state.layers)
+    .filter(([, visible]) => visible)
+    .map(([layerName]) => layerName);
+  const visibleCount = visibleLayerCount();
+  stageSubtitle.textContent = `${activeLayers.length} OpenUSD layers active · ${visibleCount} visible prims`;
+
+  if (layer && LAYER_INFO[layer]) {
+    const visible = state.layers[layer];
+    layerTitle.textContent = LAYER_INFO[layer].title;
+    layerCopy.textContent = `${visible ? LAYER_INFO[layer].active : LAYER_INFO[layer].inactive} ${visibleCount} prims are currently visible.`;
+  } else {
+    layerTitle.textContent = "Composed Stage";
+    layerCopy.textContent = `Equipment, sensors, zones, material flow, and AMR route are composed into ${visibleCount} visible prims.`;
+  }
+
+  if (flash) {
+    layerReadout.classList.remove("flash");
+    void layerReadout.offsetWidth;
+    layerReadout.classList.add("flash");
+  }
 }
 
 function renderPipelineEffects(effects) {
@@ -867,8 +955,8 @@ function bindControls() {
   document.querySelectorAll(".toggle").forEach((button) => {
     button.addEventListener("click", () => {
       const layer = button.dataset.layer;
-      state.layers[layer] = !state.layers[layer];
-      button.classList.toggle("active", state.layers[layer]);
+      setLayerVisible(layer, !state.layers[layer]);
+      if (state.layers[layer]) selectAssetById(LAYER_INFO[layer]?.representative);
       draw();
     });
   });
@@ -957,9 +1045,11 @@ async function init() {
   state.scenario = state.scenarios.default || state.scenario;
   bindControls();
   resizeCanvas();
+  renderLayerControls();
   renderScenarios();
   renderAll();
   activatePipelineStep("json", { focus: false });
+  updateLayerReadout(null, false);
   connectTelemetry();
   updateLoop();
 }

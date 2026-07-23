@@ -60,6 +60,7 @@
             <div>
               <p class="section-label">Digital Twin View</p>
               <h2 id="stage-title">Factory operations map</h2>
+              <p class="stage-subtitle" id="stage-subtitle">All OpenUSD layers composed · 31 prims visible</p>
             </div>
             <div class="view-toggles" aria-label="Layer filters">
               <button class="toggle active" data-layer="equipment" type="button">Equipment</button>
@@ -70,6 +71,11 @@
             </div>
           </div>
           <div class="canvas-wrap">
+            <div class="layer-readout" id="layer-readout" aria-live="polite">
+              <span>Layer Lens</span>
+              <strong id="layer-title">Composed Stage</strong>
+              <p id="layer-copy">Equipment, sensors, zones, material flow, and AMR route are visible together.</p>
+            </div>
             <canvas id="factory-canvas" width="1120" height="680" aria-label="Factory map"></canvas>
           </div>
           <div class="timeline">
